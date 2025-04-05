@@ -11,14 +11,7 @@ const currentSecond = new Date()
   .replace(/\..+/, "");
 const dirPath = `tmp/rapport/${currentSecond}`;
 
-async function main() {
-  await fs.mkdir(dirPath, { recursive: true });
-
-  const query = {
-    fromDate: "2025-04-03T22:00:00.000Z",
-    toDate: "2025-04-04T21:59:59.999Z",
-  };
-
+async function dowloadReport(query: { fromDate: string; toDate: string }) {
   const res = await fetch(
     "https://portal.vippsmobilepay.com/api/v0/merchants/9084/report/internal/orders",
     {
@@ -38,6 +31,14 @@ async function main() {
   } else {
     console.error(`Error: ${res.status}`);
   }
+}
+
+async function main() {
+  await fs.mkdir(dirPath, { recursive: true });
+  await dowloadReport({
+    fromDate: "2025-04-03T22:00:00.000Z",
+    toDate: "2025-04-04T21:59:59.999Z",
+  });
 }
 
 main().then(console.log);
