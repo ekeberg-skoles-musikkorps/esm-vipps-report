@@ -10,7 +10,7 @@ interface Order {
   timestamp: string;
 }
 
-function toRow(item: any) {
+export function toRow(item: any) {
   const { categoryName, timestamp, orderId, salesUnitName } = item;
 
   const { amount } = item.events.find(({ type }) => type === "CAPTURE");

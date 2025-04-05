@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "download": "tsx --env-file .env downloadReport.ts",
+    "start": "tsx reportsToCsv.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

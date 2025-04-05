@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
+import { OrderReport } from "./orderReport";
 
 const sessionId = process.env.VIPPS_SESSION_ID!;
 const csrfToken = process.env.VIPPS_CSRF_TOKEN!;
@@ -13,10 +14,6 @@ const dirPath = `tmp/rapport/${currentSecond}`;
 
 const URL =
   "https://portal.vippsmobilepay.com/api/v0/merchants/9084/report/internal/orders";
-
-interface OrderReport {
-  cursor: string;
-}
 
 async function postJSON(url: string, bodyJSON: object) {
   const headers = {
