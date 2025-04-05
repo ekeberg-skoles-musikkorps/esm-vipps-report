@@ -11,23 +11,46 @@ const currentSecond = new Date()
   .replace(/\..+/, "");
 const dirPath = `tmp/rapport/${currentSecond}`;
 
+const URL =
+  "https://portal.vippsmobilepay.com/api/v0/merchants/9084/report/internal/orders";
+
+interface OrderReport {
+  cursor: string;
+}
+
 async function dowloadReport(query: { fromDate: string; toDate: string }) {
-  const res = await fetch(
-    "https://portal.vippsmobilepay.com/api/v0/merchants/9084/report/internal/orders",
-    {
-      headers: {
-        "x-csrf-token": csrfToken,
-        cookie: `session_id=${sessionId}; csrf=${csrf}`,
-      },
-      body: JSON.stringify(query),
-      method: "POST",
-    },
-  );
+  const headers = {
+    "x-csrf-token": csrfToken,
+    cookie: `session_id=${sessionId}; csrf=${csrf}`,
+  };
+  const res = await fetch(URL, {
+    headers,
+    body: JSON.stringify(query),
+    method: "POST",
+  });
   if (res.ok) {
-    const report = await res.json();
+    const report = (await res.json()) as OrderReport;
     const filePath = path.join(dirPath, `report-${0}.json`);
     await fs.writeFile(filePath, JSON.stringify(report, null, 2), "utf8");
     console.log(`Wrote ${filePath}`);
+
+    const { cursor } = report;
+
+    if (cursor.length > 0) {
+      const res = await fetch(URL, {
+        headers,
+        body: JSON.stringify({ cursor }),
+        method: "POST",
+      });
+      if (res.ok) {
+        const report = (await res.json()) as OrderReport;
+        const filePath = path.join(dirPath, `report-${1}.json`);
+        await fs.writeFile(filePath, JSON.stringify(report, null, 2), "utf8");
+        console.log(`Wrote ${filePath}`);
+      } else {
+        console.error(`Error: ${res.status}`);
+      }
+    }
   } else {
     console.error(`Error: ${res.status}`);
   }
@@ -36,8 +59,8 @@ async function dowloadReport(query: { fromDate: string; toDate: string }) {
 async function main() {
   await fs.mkdir(dirPath, { recursive: true });
   await dowloadReport({
-    fromDate: "2025-04-03T22:00:00.000Z",
-    toDate: "2025-04-04T21:59:59.999Z",
+    fromDate: "2025-04-04T22:00:00.000Z",
+    toDate: "2025-04-05T21:59:59.999Z",
   });
 }
 
