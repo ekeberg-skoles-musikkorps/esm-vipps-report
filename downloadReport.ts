@@ -18,47 +18,41 @@ interface OrderReport {
   cursor: string;
 }
 
-async function dowloadReport(query: { fromDate: string; toDate: string }) {
+async function postJSON(url: string, bodyJSON: object) {
   const headers = {
     "x-csrf-token": csrfToken,
     cookie: `session_id=${sessionId}; csrf=${csrf}`,
   };
-  const res = await fetch(URL, {
-    headers,
-    body: JSON.stringify(query),
-    method: "POST",
-  });
-  if (res.ok) {
-    const report = (await res.json()) as OrderReport;
-    const filePath = path.join(dirPath, `report-${0}.json`);
-    await fs.writeFile(filePath, JSON.stringify(report, null, 2), "utf8");
-    console.log(`Wrote ${filePath}`);
+  const body = JSON.stringify(bodyJSON);
+  const res = await fetch(url, { headers, body: body, method: "POST" });
+  if (!res.ok) {
+    throw Error(`Failed to fetch: ${res.url}: ${res.status}`);
+  }
+  return res;
+}
 
-    const { cursor } = report;
+async function writeToFile(report: object, number: number) {
+  const filePath = path.join(dirPath, `report-${number}.json`);
+  await fs.writeFile(filePath, JSON.stringify(report, null, 2), "utf8");
+  console.log(`Wrote ${filePath}`);
+}
 
-    if (cursor.length > 0) {
-      const res = await fetch(URL, {
-        headers,
-        body: JSON.stringify({ cursor }),
-        method: "POST",
-      });
-      if (res.ok) {
-        const report = (await res.json()) as OrderReport;
-        const filePath = path.join(dirPath, `report-${1}.json`);
-        await fs.writeFile(filePath, JSON.stringify(report, null, 2), "utf8");
-        console.log(`Wrote ${filePath}`);
-      } else {
-        console.error(`Error: ${res.status}`);
-      }
-    }
-  } else {
-    console.error(`Error: ${res.status}`);
+async function downloadReport(query: { fromDate: string; toDate: string }) {
+  let index = 0;
+  const res = await postJSON(URL, query);
+  let report = (await res.json()) as OrderReport;
+  await writeToFile(report, index++);
+
+  while (report.cursor.length > 0) {
+    const res = await postJSON(URL, { cursor: report.cursor });
+    report = (await res.json()) as OrderReport;
+    await writeToFile(report, index++);
   }
 }
 
 async function main() {
   await fs.mkdir(dirPath, { recursive: true });
-  await dowloadReport({
+  await downloadReport({
     fromDate: "2025-04-04T22:00:00.000Z",
     toDate: "2025-04-05T21:59:59.999Z",
   });
