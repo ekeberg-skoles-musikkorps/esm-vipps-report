@@ -27,30 +27,52 @@ export interface FlatOrder {
   categoryName: string;
   amount: number;
   timestamp: string;
+  customerHash: string;
+}
+
+const salt = Math.random().toString(36);
+
+function simpleHash(values: string[]): string {
+  const input = salt + values.join("|");
+  let hash = 5381;
+  for (let i = 0; i < input.length; i++) {
+    hash = (hash * 33) ^ input.charCodeAt(i);
+  }
+  return (hash >>> 0).toString(36);
 }
 
 function toRow(item: OrderReportItem): FlatOrder {
-  const { categoryName, timestamp, orderId, salesUnitName } = item;
+  const { timestamp, orderId, salesUnitName } = item;
+  const date = new Date(timestamp).toISOString().substring(0, 10);
 
   const { amount } = item.events.find(({ type }) => type === "CAPTURE")!;
 
+  let categoryName =
+    salesUnitName === "Ekeberg skoles musikkorps cafe"
+      ? "Kafeteria"
+      : item.categoryName && item.categoryName.length > 0
+        ? item.categoryName
+        : "Diverse";
+
+  if (date === "2025-04-05" && categoryName === "Auksjon")
+    categoryName = "Nytt/Ubrukt";
+
   return {
-    date: new Date(timestamp).toISOString().substring(0, 10),
-    categoryName:
-      salesUnitName === "Ekeberg skoles musikkorps cafe"
-        ? "Kafeteria"
-        : categoryName && categoryName.length > 0
-          ? categoryName
-          : "Diverse",
+    date,
+    categoryName,
     amount: amount / 100,
     orderId,
     timestamp,
+    customerHash: simpleHash([item.phoneNumber, item.senderName]),
   };
 }
 
 async function main() {
   const orders = (await readOrders(`tmp/rapport/`))
     .map((o) => toRow(o))
+    .filter(
+      (o) => new Date(o.timestamp).getTime() > new Date(2025, 1, 1).getTime(),
+    )
     .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
   console.log(orders.length);
 
@@ -62,8 +84,8 @@ async function main() {
   );
 
   const report = uniqueSales
-    .map(({ date, categoryName, amount, orderId, timestamp }) =>
-      [date, categoryName, amount, orderId, timestamp].join(";"),
+    .map(({ date, categoryName, amount, orderId, timestamp, customerHash }) =>
+      [date, categoryName, amount, orderId, timestamp, customerHash].join(";"),
     )
     .join("\n");
 
@@ -73,10 +95,11 @@ async function main() {
     "amount",
     "orderId",
     "timestamp",
+    "customerHash",
   ].join(";");
 
-  await fs.writeFile("tmp/report.csv", header + "\n" + report, "latin1");
-  console.log(`Wrote tmp/report.csv`);
+  await fs.writeFile("tmp/report-2025.csv", header + "\n" + report, "latin1");
+  console.log(`Wrote tmp/report-2025.csv`);
 }
 
 main().then(console.log);

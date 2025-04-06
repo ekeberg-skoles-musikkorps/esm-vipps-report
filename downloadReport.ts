@@ -50,8 +50,8 @@ async function downloadReport(query: { fromDate: string; toDate: string }) {
 async function main() {
   await fs.mkdir(dirPath, { recursive: true });
   await downloadReport({
-    fromDate: "2025-04-04T22:00:00.000Z",
-    toDate: "2025-04-05T21:59:59.999Z",
+    fromDate: "2025-04-05T22:00:00.000Z",
+    toDate: "2025-04-06T21:59:59.999Z",
   });
 }
 
