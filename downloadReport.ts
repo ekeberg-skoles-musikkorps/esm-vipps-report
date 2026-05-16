@@ -2,9 +2,16 @@ import fs from "fs/promises";
 import path from "path";
 import { OrderReport } from "./orderReport";
 
-const sessionId = process.env.VIPPS_SESSION_ID!;
+const sessionId = process.env.VIPPS_SESSION_ID_COOKIE!;
+const csrf = process.env.VIPPS_CSRF_COOKIE!;
 const csrfToken = process.env.VIPPS_CSRF_TOKEN!;
-const csrf = process.env.VIPPS_CSRF!;
+const merchantId = "9084";
+const query = {
+  fromDate: "2025-05-17T00:00:00.000Z",
+  toDate: "2025-05-18T00:00:00.000Z",
+};
+
+console.log({ sessionId, csrfToken, csrf });
 
 const currentSecond = new Date()
   .toISOString()
@@ -12,8 +19,7 @@ const currentSecond = new Date()
   .replace(/\..+/, "");
 const dirPath = `tmp/rapport/${currentSecond}`;
 
-const URL =
-  "https://portal.vippsmobilepay.com/api/v0/merchants/9084/report/internal/orders";
+const URL = `https://portal.vippsmobilepay.com/api/v0/merchants/${merchantId}/report/internal/orders`;
 
 async function postJSON(url: string, bodyJSON: object) {
   const headers = {
@@ -47,12 +53,9 @@ async function downloadReport(query: { fromDate: string; toDate: string }) {
   }
 }
 
-async function main() {
+async function main(query: { fromDate: string; toDate: string }) {
   await fs.mkdir(dirPath, { recursive: true });
-  await downloadReport({
-    fromDate: "2025-04-05T22:00:00.000Z",
-    toDate: "2025-04-06T21:59:59.999Z",
-  });
+  await downloadReport(query);
 }
 
-main().then(console.log);
+main(query).then(console.log);

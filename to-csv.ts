@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import { OrderReport, OrderReportItem } from "./orderReport";
 
 const filePath = "tmp/rapport.json";
 
@@ -6,14 +7,14 @@ interface Order {
   date: string;
   categoryName: string;
   amount: number;
-  orderId: number;
+  orderId: string;
   timestamp: string;
 }
 
-export function toRow(item: any) {
+export function toRow(item: OrderReportItem): Order {
   const { categoryName, timestamp, orderId, salesUnitName } = item;
 
-  const { amount } = item.events.find(({ type }) => type === "CAPTURE");
+  const { amount } = item.events.find(({ type }) => type === "CAPTURE")!;
 
   return {
     date: new Date(timestamp).toISOString().substring(0, 10),
@@ -31,7 +32,7 @@ export function toRow(item: any) {
 
 async function read() {
   const raw = await fs.readFile(filePath, "utf-8");
-  const data = JSON.parse(raw);
+  const data = JSON.parse(raw) as OrderReport[];
 
   const sales: Order[] = data.flatMap((s) =>
     s.items.map((item) => toRow(item)),
@@ -48,7 +49,7 @@ async function read() {
     uniqueSales
       .filter(
         ({ date }) =>
-          new Date(date).getTime() > new Date("2025-04-04").getTime(),
+          new Date(date).getTime() > new Date("2026-04-09").getTime(),
       )
       .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
       .map(({ date, categoryName, amount, orderId, timestamp }) =>

@@ -6,6 +6,7 @@
   "scripts": {
     "download": "tsx --env-file .env downloadReport.ts",
     "start": "tsx reportsToCsv.ts",
+    "running-total": "tsx runningTotalsToCsv.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -17,5 +18,8 @@
     "prettier": "^3.5.3",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0"
   }
 }
